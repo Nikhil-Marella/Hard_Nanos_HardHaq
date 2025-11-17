@@ -33,9 +33,6 @@ Development & Git
 - The new UI and features are implemented on branch `streamlit-updates`; this branch has been merged to `main` in this commit.
 - To create a PR or view the branch on GitHub: https://github.com/jackfrostbob333/Hard_Nanos_HardHaq/pull/new/streamlit-updates
 
-Contact
-If you'd like further improvements (SI-prefix-aware tick formatting, robust regressions, CSV export of fit parameters, etc.), open an issue or tell me what to add.
-
 # Parameter-based Text File Comparer (Streamlit)
 
 This Streamlit app scans a folder for parameterized text files following the pattern `<param>_<value>.txt` (for example `V_rf_300.txt`) and helps you inspect how numeric table values inside those files change with the parameter.
@@ -85,7 +82,6 @@ streamlit run streamlit_app.py
 - Table parsing is heuristic-based. If your files use special separators, multi-line headers, or other formats, I can extend the parser to handle them (or accept a user-provided parser).
 - Optional improvements: align columns by header name across files, plot error bars (std dev), or export per-column change summaries as CSV.
 
-If you want, I can update the README with screenshots or add a quick demo dataset and a single-command run script.
 # Parameter-based Text File Comparer (Streamlit)
 
 This small Streamlit app scans a folder for text files whose filenames follow the pattern `<param>_<value>.txt` (for example `V_rf_300.txt`) and provides:
@@ -121,7 +117,7 @@ streamlit run streamlit_app.py
 
 - Filenames must match the regex `(?P<param>[A-Za-z0-9]+)_(?P<value>-?\d+(?:\.\d+)?)\.txt`.
 - I implemented simple metrics; if you want the app to parse `.mph` files or use richer domain-specific parsing, I can add that.
-- The app intentionally ignores `.mph` files and will not open or modify them. If you need `.mph` parsing, I can add an opt-in feature.
+- The app intentionally ignores `.mph` files and will not open or modify them.
 
 ## Live file watching
 

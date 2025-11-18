@@ -1,0 +1,105 @@
+\documentclass[12pt]{article}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage[table]{xcolor}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\setlength{\headheight}{15pt}
+\usepackage{array}
+\geometry{margin=1in}
+
+% Define custom colors
+\definecolor{IonBlue}{RGB}{0,70,140}
+\definecolor{IonGray}{RGB}{240,240,240}
+\definecolor{IonAccent}{RGB}{200,50,50}
+
+% Section formatting
+\titleformat{\section}
+  {\color{IonBlue}\normalfont\Large\bfseries}
+  {\color{IonAccent}\thesection}{1em}{}
+
+% Header and footer
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\color{IonBlue}HardHaQ '25 Ion Trap Challenge}
+\fancyhead[R]{\color{IonAccent}\thepage}
+\fancyfoot[C]{\color{IonBlue}Team Submission}
+
+% Title
+\title{\textcolor{IonBlue}{HardHaQ '25 Trapped Ion Problem Set Submission}}
+\author{\textcolor{IonAccent}{Team Name:} \textit{Hard Nanos} \\ 
+        \textcolor{IonAccent}{Members:} \textit{Nikhil, Rebanta, Lucas}}
+\date{\ November 22 2025}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+Briefly state the objective of your design (e.g., maximize trap depth while minimizing RF power).
+Mention the starting point (the provided COMSOL file) and your overall strategy.
+
+\section{Design Choices}
+\begin{itemize}
+    \item \textbf{Geometry modifications:} [Describe changes to rod spacing, rod length, endcap placement, or custom shapes.]
+    \item \textbf{Parameter tuning:} [List RF voltage, DC endcap voltages, or other editable parameters you adjusted.]
+    \item \textbf{Rationale:} [Explain why you made these changes — symmetry improvement, deeper potential well, reduced offset, etc.]
+\end{itemize}
+
+\section{Trap Metrics Results}
+Insert your exported Trap Metrics table here. Example format:
+
+\rowcolors{2}{IonGray}{white}
+\begin{center}
+\begin{tabular}{|>{\columncolor{IonGray}}l|c|l|}
+\hline
+\textbf{Metric} & \textbf{Value} & \textbf{Notes} \\
+\hline
+depth\_eV & [ ] & Trap depth (higher = stronger confinement) \\
+minU\_eV & [ ] & Minimum effective potential \\
+maxU\_eV & [ ] & Maximum effective potential \\
+trap\_x, y, z & [ ] & Coordinates of trap minimum \\
+offset\_mm & [ ] & Distance from geometric center \\
+P\_est\_mW & [ ] & Estimated RF power \\
+\hline
+\end{tabular}
+\end{center}
+
+Highlight improvements compared to the default configuration. If possible, show before vs. after values.
+
+\section{Visual Evidence}
+Include at least one screenshot of your trap geometry and potential distribution. Example:
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.7\textwidth]{trap_geometry.png}
+    \caption{\textcolor{IonBlue}{Modified trap geometry with reduced offset.}}
+\end{figure}
+
+\section{Analysis \& Discussion}
+Explain how your design affected confinement quality:
+\begin{itemize}
+    \item Did trap depth increase?
+    \item Was the ion better centered?
+    \item Did RF power efficiency improve?
+\end{itemize}
+
+Discuss trade-offs (e.g., deeper trap but higher power, symmetry vs. complexity).
+Note any unexpected artifacts or limitations.
+
+\section{Conclusion}
+Summarize why your design is effective.
+State the main improvement achieved (e.g., “Our design reduced offset by 40\% while maintaining comparable depth”).
+
+\section{Optional Extensions}
+If you explored unconventional geometries, parameter sweeps, or anisotropic traps, describe them briefly.
+Mention any future directions or open questions.
+
+\section*{Deliverables Checklist}
+\begin{itemize}
+    \item Exported Trap Metrics table (.txt file)
+    \item Screenshot(s) of geometry and potential distribution
+    \item Modified COMSOL file (.mph)
+    \item Written summary (this document)
+\end{itemize}
+
+\end{document}

@@ -7,6 +7,8 @@
 \setlength{\headheight}{15pt}
 \usepackage{array}
 \geometry{margin=1in}
+\usepackage{pgfplotstable}
+\pgfplotsset{compat=1.18}
 
 % Define custom colors
 \definecolor{IonBlue}{RGB}{0,70,140}
@@ -35,31 +37,40 @@
 \maketitle
 
 \section{Introduction}
-Briefly state the objective of your design (e.g., maximize trap depth while minimizing RF power).
-Mention the starting point (the provided COMSOL file) and your overall strategy.
+Our team adopted a systematic strategy to tackle the ion trap challenge. We began by developing a clear understanding of the fundamental components of the RF Paul trap—examining the roles of the RF rods, DC endcaps, and vacuum region, and considering why each element was designed in its particular way. This foundational knowledge ensured that subsequent modifications were grounded in physical intuition rather than trial and error.
+
+With this baseline established, we proceeded to vary individual parameters one at a time, carefully observing how each adjustment influenced the trap metrics. This step allowed us to isolate the effects of rod spacing, electrode length, and voltage settings, and to build a direct connection between parameter changes and performance outcomes such as trap depth, offset, and estimated RF power.
+
+Once we had characterized the sensitivity of the system to these parameters, we advanced to optimization using MATLAB’s integration with COMSOL. This enabled us to automate portions of the tuning process and identify parameter sets that improved confinement quality while balancing efficiency.
+
+Finally, after refining the provided baseline design, we explored alternative geometries. Among several candidates, we focused on parabolic rods, which offered promising symmetry and confinement properties. We optimized the parameters of this new geometry and evaluated its impact on the trap metrics, comparing its performance against the original configuration to highlight both improvements and trade-offs.
 
 \section{Design Choices}
 \begin{itemize}
-    \item \textbf{Geometry modifications:} [Describe changes to rod spacing, rod length, endcap placement, or custom shapes.]
-    \item \textbf{Parameter tuning:} [List RF voltage, DC endcap voltages, or other editable parameters you adjusted.]
-    \item \textbf{Rationale:} [Explain why you made these changes — symmetry improvement, deeper potential well, reduced offset, etc.]
+    \item \textbf{Geometry modifications:} We began with the baseline COMSOL model and explored changes to rod spacing, electrode length, and endcap placement. After refining the default geometry, we experimented with alternative designs, ultimately focusing on parabolic rods due to their promising symmetry and confinement properties.
+    
+    \item \textbf{Parameter tuning:} Each editable parameter was varied individually to observe its effect on trap metrics. We adjusted RF voltage, DC endcap voltages, and rod spacing systematically, then used MATLAB–COMSOL integration to automate parameter sweeps and identify optimized configurations that balanced trap depth with reduced RF power consumption.
+    
+    \item \textbf{Rationale:} Our modifications were guided by physical intuition and metric outcomes. Geometry changes targeted improved electrode symmetry and reduced offset, while parameter tuning sought deeper potential wells and more efficient confinement. The parabolic rod design was chosen to explore innovative geometries that could enhance stability, even though it required careful optimization to avoid excessive power usage.
 \end{itemize}
 
+
 \section{Trap Metrics Results}
-Insert your exported Trap Metrics table here. Example format:
 
 \rowcolors{2}{IonGray}{white}
 \begin{center}
-\begin{tabular}{|>{\columncolor{IonGray}}l|c|l|}
+\begin{tabular}{|>{\columncolor{IonGray}}l|c|}
 \hline
-\textbf{Metric} & \textbf{Value} & \textbf{Notes} \\
+\textbf{Metric} & \textbf{Value} \\
 \hline
-depth\_eV & [ ] & Trap depth (higher = stronger confinement) \\
-minU\_eV & [ ] & Minimum effective potential \\
-maxU\_eV & [ ] & Maximum effective potential \\
-trap\_x, y, z & [ ] & Coordinates of trap minimum \\
-offset\_mm & [ ] & Distance from geometric center \\
-P\_est\_mW & [ ] & Estimated RF power \\
+depth\_eV   & 0.1171 \\
+minU\_eV    & 49.6875 \\
+maxU\_eV    & 49.8047 \\
+trap\_x     & 0 \\
+trap\_y     & 5.0E-6 \\
+trap\_z     & 0.01 \\
+offset\_mm  & 10.0000 \\
+P\_est\_mW  & 8797.30 \\
 \hline
 \end{tabular}
 \end{center}
@@ -76,12 +87,18 @@ Include at least one screenshot of your trap geometry and potential distribution
 \end{figure}
 
 \section{Analysis \& Discussion}
-Explain how your design affected confinement quality:
 \begin{itemize}
-    \item Did trap depth increase?
-    \item Was the ion better centered?
-    \item Did RF power efficiency improve?
+    \item \textbf{Trap depth:} Varying rod spacing and electrode length had the strongest influence on trap depth. Optimized configurations produced deeper potential wells, improving confinement stability and robustness against stray fields.
+    
+    \item \textbf{Offset and symmetry:} Voltage adjustments and geometric refinements revealed that electrode symmetry was critical for minimizing offset. The parabolic rod design reduced misalignment compared to the baseline, resulting in a more centered ion position.
+    
+    \item \textbf{Power efficiency:} MATLAB–COMSOL optimization highlighted the trade-off between deeper traps and RF power consumption. While stronger confinement often required higher power, systematic tuning identified parameter sets that balanced efficiency with performance.
+    
+    \item \textbf{Trade-offs:} Incremental tuning of the baseline design yielded immediate improvements with relatively low complexity. In contrast, geometric innovation (parabolic rods) offered longer-term potential for enhanced confinement but introduced additional optimization challenges and higher sensitivity to parameter choices.
+    
+    \item \textbf{Overall insight:} The analysis demonstrated the interplay between physical intuition and computational optimization. Deeper traps improve robustness, centered ions reduce instability, and efficient power usage ensures scalability. Each design decision required balancing these priorities to achieve a well-performing trap.
 \end{itemize}
+
 
 Discuss trade-offs (e.g., deeper trap but higher power, symmetry vs. complexity).
 Note any unexpected artifacts or limitations.
@@ -103,3 +120,4 @@ Mention any future directions or open questions.
 \end{itemize}
 
 \end{document}
+

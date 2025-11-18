@@ -3,6 +3,12 @@
 /.venv_website
 /website/.venv
 
+# Ignore HardHaq submission auxiliary files but keep LaTeX and PDF
+# (ignore any HardHaq_Submission.* except the .tex and .pdf files)
+HardHaq_Submission.*
+!HardHaq_Submission.tex
+!HardHaq_Submission.pdf
+
 # Python
 __pycache__/
 *.py[cod]
@@ -12,3 +18,9 @@ __pycache__/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Ignore HardHaq submission auxiliary files but keep LaTeX and PDF
+# (ignore any HardHaq_Submission.* except the .tex and .pdf files)
+HardHaq_Submission.*
+!HardHaq_Submission.tex
+!HardHaq_Submission.pdf

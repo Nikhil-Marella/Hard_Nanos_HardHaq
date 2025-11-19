@@ -26,8 +26,8 @@ targets = {
 # --- Weights for each objective ---
 weights = {
     "depth_eV": 1.0,
-    "offset_mm": 1.0,
-    "P_est_mW": 1.0
+    "offset_mm": 10.0,
+    "P_est_mW": 0.1
 }
 
 def find_model_file(preferred_name: str = "3d_pole_trap - Copy.mph") -> Path:
@@ -60,6 +60,8 @@ def objective(depth_eV, offset_mm, P_est_mW):
     depth_score  = depth_eV / (targets["depth_eV"] + 1e-9)
     offset_score = (targets["offset_mm"] + 1e-9) / (offset_mm + 1e-9)
     power_score  = (targets["P_est_mW"] + 1e-9) / (P_est_mW + 1e-9)
+    if offset_mm > 10:
+        return -1e6
 
     # Weighted sum
     score = (weights["depth_eV"] * depth_score) \
@@ -82,8 +84,12 @@ def run_trial(params, model, writer, f):
 
     print("Running trial with params:", params)
 
-
-    model.solve()
+    try:
+        model.solve()
+    except Exception as e:
+        print("COMSOL study run failed:", e)
+        return 1e6
+    
     print('solved Trial')
 
     depth_eV   = try_eval(model, "depth_eV")

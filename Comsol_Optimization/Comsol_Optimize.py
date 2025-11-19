@@ -107,7 +107,13 @@ def run_trial(params, model, writer, f):
     if offset_mm > 15:
         print("Offset too high, penalizing")
         score = -1e6
-    
+    if depth_eV < 0.0001:
+        print("Depth too low, penalizing")
+        score = -1e6
+
+    if P_est_mW < 10:
+        print("Power probably a lie, penalizing")
+        score = -1e6
 
     try:
         # write a row using the provided DictWriter and flush the underlying file

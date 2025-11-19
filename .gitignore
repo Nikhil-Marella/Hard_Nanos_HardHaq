@@ -24,3 +24,6 @@ Thumbs.db
 HardHaq_Submission.*
 !HardHaq_Submission.tex
 !HardHaq_Submission.pdf
+
+*.mph
+*.mph.lock

@@ -74,23 +74,32 @@ def find_model_file(preferred_name: str = "3d_pole_trap - Copy.mph") -> Path:
     sys.exit(2)
 
 def compute_score(depth_eV, offset_m, P_est_mW):
-    # Normalize values
+    # Normalize
     depth_norm  = depth_eV / depth_ref if depth_ref > 0 else 0
     offset_norm = offset_m / offset_target if offset_target > 0 else 0
-    power_norm  = P_est_mW / power_budget if power_budget > 0 else 0
 
-    # Base weighted score
+    # Log-scale power to reduce domination by extreme values
+    power_scaled = np.log10(max(P_est_mW, 1.0))  # avoid log(0)
+    power_ref    = np.log10(max(power_budget, 1.0))
+    power_norm   = power_scaled / power_ref
+
+    # Base weighted score (maximize depth, minimize offset/power)
     score = (weights["depth"] * depth_norm
              - weights["offset"] * offset_norm
              - weights["power"] * power_norm)
 
-    # Constraint-aware penalties
+    # Constraint penalties (capped to avoid runaway dominance)
+    penalty = 0.0
     if offset_m > offset_target:
-        score -= penalties["offset"] * ((offset_m / offset_target) - 1.0) ** 2
+        penalty += penalties["offset"] * ((offset_m / offset_target) - 1.0) ** 2
     if P_est_mW > power_budget:
-        score -= penalties["power"] * ((P_est_mW / power_budget) - 1.0) ** 2
+        penalty += penalties["power"] * ((P_est_mW / power_budget) - 1.0) ** 2
 
-    return score
+    # Cap total penalty to keep the landscape navigable
+    penalty = min(penalty, 50.0)
+
+    return score - penalty
+
 
 def objective(x, model):
     """

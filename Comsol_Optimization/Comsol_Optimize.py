@@ -5,78 +5,7 @@ import csv
 from scipy.optimize import minimize
 import os
 import math
-
-# Parameters ordering used throughout the optimizer
-PARAM_ORDER = [
-    "V_rf",
-    "V_dc",
-    "V_endcap",
-    "rod_spacing",
-    "rod_radius",
-    "rod_length",
-    "endcap_offset",
-]
-
-
-def enforce_inscribed_constraint(params, model=None):
-    """Ensure the cylinder defined by (rod_spacing, rod_length) can be inscribed
-    inside a sphere of radius R_sphere = 20 * rod_radius.
-
-    Assumptions:
-    - The cylinder radius is approximated as rod_spacing / 2.
-    - The cylinder height is rod_length.
-
-    If the cylinder does not fit, scale down both rod_spacing and rod_length
-    by the same factor so the cylinder fits exactly on the sphere surface.
-    Returns the (possibly modified) params list and a boolean indicating whether
-    a modification was applied.
-    """
-    # params is list ordered as PARAM_ORDER
-    p = list(params)
-    # indices
-    i_spacing = PARAM_ORDER.index("rod_spacing")
-    i_radius = PARAM_ORDER.index("rod_radius")
-    i_length = PARAM_ORDER.index("rod_length")
-    i_endcap_off = PARAM_ORDER.index("endcap_offset")
-
-    rod_spacing = float(p[i_spacing])
-    rod_radius = float(p[i_radius])
-    rod_length = float(p[i_length])
-    endcap_offset = float(p[i_endcap_off])
-
-    # try to read endcap_thick from the model if available, otherwise assume 0
-    endcap_thick = 0.0
-    if model is not None:
-        try:
-            val = model.parameter("endcap_thick")
-            endcap_thick = float(val) if val is not None else 0.0
-        except Exception:
-            endcap_thick = 0.0
-
-    # cylinder radius includes rod_radius as requested
-    cyl_radius = (rod_spacing / 2.0) + rod_radius
-    # cylinder height includes endcaps
-    cyl_height = rod_length + 2.0 * (endcap_offset + endcap_thick)
-    half_height = cyl_height / 2.0
-    R_sphere = 20.0 * rod_radius
-
-    lhs = half_height * half_height + cyl_radius * cyl_radius
-    rhs = R_sphere * R_sphere
-    if lhs <= rhs or rhs <= 0:
-        return p, False
-
-    # scale factor to make lhs == rhs (scale <= 1)
-    current = math.sqrt(lhs)
-    desired = R_sphere
-    scale = min(1.0, desired / current)
-    # apply scale to spacing, length, and endcap_offset (keep rod_radius unchanged)
-    new_spacing = rod_spacing * scale
-    new_length = rod_length * scale
-    new_endcap_off = endcap_offset * scale
-    p[i_spacing] = float(new_spacing)
-    p[i_length] = float(new_length)
-    p[i_endcap_off] = float(new_endcap_off)
-    return p, True
+import argparse
 
 # --- Baseline values from your COMSOL GUI ---
 baseline_values = {
@@ -145,11 +74,64 @@ def objective(depth_eV, offset_mm, P_est_mW):
           + (weights["P_est_mW"] * power_score)
     return score
 
-def run_trial(params, model, writer, f):
-    # enforce inscribed constraint (may modify spacing/length to fit inside sphere)
-    params, modified = enforce_inscribed_constraint(params)
-    if modified:
-        print("Adjusted params to satisfy inscribed-sphere constraint:", params)
+def run_trial(params, model, writer, f, enforce=True):
+    # enforce inscribed-sphere constraint so the geometry does not exceed the sphere surface
+    # params order: V_rf, V_dc, V_endcap, rod_spacing, rod_radius, rod_length, endcap_offset
+    def enforce_inscribed_constraint(p, model_obj=None):
+        p = list(p)
+        # indices
+        i_spacing = 3
+        i_radius = 4
+        i_length = 5
+        i_endcap_off = 6
+
+        rod_spacing = float(p[i_spacing])
+        rod_radius = float(p[i_radius])
+        rod_length = float(p[i_length])
+        endcap_offset = float(p[i_endcap_off])
+
+        # attempt to read endcap_thick from model parameters if available
+        endcap_thick = 0.0
+        if model_obj is not None:
+            try:
+                val = model_obj.parameter("endcap_thick")
+                if val is not None:
+                    endcap_thick = float(val)
+            except Exception:
+                endcap_thick = 0.0
+
+        # cylinder radius includes rod_radius
+        cyl_radius = (rod_spacing / 2.0) + rod_radius
+        # cylinder height includes both endcaps
+        cyl_height = rod_length + 2.0 * (endcap_offset + endcap_thick)
+        half_height = cyl_height / 2.0
+        R_sphere = 20.0 * rod_radius
+
+        lhs = half_height * half_height + cyl_radius * cyl_radius
+        rhs = R_sphere * R_sphere
+        if rhs <= 0:
+            return p, False
+        if lhs <= rhs:
+            return p, False
+
+        # scale <= 1 to shrink spacing/length/offset so cylinder fits inside sphere
+        current = math.sqrt(lhs)
+        desired = R_sphere
+        scale = min(1.0, desired / current)
+
+        new_spacing = rod_spacing * scale
+        new_length = rod_length * scale
+        new_endcap_off = endcap_offset * scale
+
+        p[i_spacing] = float(new_spacing)
+        p[i_length] = float(new_length)
+        p[i_endcap_off] = float(new_endcap_off)
+        return p, True
+
+    if enforce:
+        params, adjusted = enforce_inscribed_constraint(params, model)
+        if adjusted:
+            print("Parameters adjusted to fit inside sphere (20*rod_radius):", params)
 
     # unpack params
     V_rf, V_dc, V_endcap, rod_spacing, rod_radius, rod_length, endcap_offset = params
@@ -202,6 +184,12 @@ def run_trial(params, model, writer, f):
     # return negative score for minimizer (we used score higher is better). If trial failed, return large positive penalty.
     return -score if score is not None else 1e6
 def main():
+    parser = argparse.ArgumentParser(description="COMSOL optimization runner")
+    parser.add_argument("--no-enforce", action="store_true", help="Disable inscribed-sphere enforcement (allow params to exceed sphere)")
+    args = parser.parse_args()
+    enforce_flag = not args.no_enforce
+    print(f"Inscribed-sphere enforcement: {'ON' if enforce_flag else 'OFF'}")
+
     model_path = find_model_file()
     print("Starting COMSOL client...")
     client = mph.start(cores=8, version="6.3") #THE CORE COUNT IS SO IMPORTANT GODDAMNIT KEEP IT 8
@@ -229,7 +217,7 @@ def main():
             writer.writeheader()
 
             # run optimizer, passing both the DictWriter and the open file handle for flushing
-            result = minimize(lambda p: run_trial(p, model, writer, f),
+            result = minimize(lambda p: run_trial(p, model, writer, f, enforce=enforce_flag),
                             x0, method="Nelder-Mead", options={"maxiter": 50})
         
         

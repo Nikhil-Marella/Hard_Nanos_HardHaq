@@ -2,6 +2,8 @@
 /.venv
 /.venv_website
 /website/.venv
+/.venv311
+/.venv312
 
 # Ignore HardHaq submission auxiliary files but keep LaTeX and PDF
 # (ignore any HardHaq_Submission.* except the .tex and .pdf files)
@@ -9,10 +11,15 @@ HardHaq_Submission.*
 !HardHaq_Submission.tex
 !HardHaq_Submission.pdf
 
+.streamlit_watch_trigger
+
+
 # Python
 __pycache__/
 *.py[cod]
 *.pyo
+
+jpype_env
 
 # Editor/OS
 .vscode/

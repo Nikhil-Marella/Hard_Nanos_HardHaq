@@ -91,10 +91,11 @@ def run_trial(params, model, writer, f, enforce=True):
         endcap_offset = float(p[i_endcap_off])
 
         # attempt to read endcap_thick from model parameters if available
+        # Use numeric evaluation (model.evaluate) via try_eval to avoid expression/unit strings
         endcap_thick = 0.0
         if model_obj is not None:
             try:
-                val = model_obj.parameter("endcap_thick")
+                val = try_eval(model_obj, "endcap_thick")
                 if val is not None:
                     endcap_thick = float(val)
             except Exception:

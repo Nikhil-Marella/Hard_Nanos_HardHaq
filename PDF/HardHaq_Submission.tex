@@ -11,6 +11,8 @@
 \geometry{margin=1in}
 \usepackage{pgfplotstable}
 \pgfplotsset{compat=1.18}
+\usepackage[font=small,labelfont=bf]{caption}
+
 
 % Define custom colors
 \definecolor{IonBlue}{RGB}{0,70,140}
@@ -37,81 +39,99 @@
 
 \begin{document}
 \maketitle
-
+\raggedright
 \section{Introduction}
 \subsection{Problem Overview}
+
 The Ion Trap Challenge required us to modify an RF Paul trap to more effectively confine a single $\mathrm{Yb}^{+}$ ion using the combination of an oscillating and a static electric field inside of a vacuum environment. The primary components of the trap are the RF rods for radial confinement, DC endcaps for axial stability, and a vacuum region to minimize ion collisions with background gas molecules.
+\begin{figure}[h!tbp]
+    \centering
+    \includegraphics[width=0.4\linewidth]{PDF_Visuals/Default_System.png}
+    \captionof{figure}{Schematic of the ion trap components: RF rods, DC endcaps, and vacuum chamber. Each component plays a crucial role in achieving stable ion confinement.}
+\end{figure}
+
 Our team adopted a systematic strategy to tackle the ion trap challenge. We began by developing a clear understanding of the fundamental components of the RF Paul trap, recognizing that each element plays a distinct and indispensable role in achieving stable confinement. This foundational knowledge ensured that subsequent modifications were grounded in physical intuition rather than trial and error.
+
+
 
 \subsection{RF Rods: Radial Confinement}
 
-    \includegraphics[width=\linewidth]{PDF_Visuals/paul_trap_schematic.png}
-    \captionof{figure}{Schematic of RF Paul trap showing RF rods, DC endcaps, and vacuum chamber.\\
-    \textbf{Subtitle:} Radial confinement arises from oscillating RF rods which produce a time-varying quadrupole potential that focuses ions dynamically in the radial plane.}
+ The RF rods form the core of the quadrupole field. By applying an oscillating radiofrequency voltage, they generate a time-varying potential that counteracts the natural tendency of ions to escape. This produces dynamic stability in the radial plane through alternating focusing and defocusing forces.
 
 
-    \raggedright
-    \small
-    The RF rods form the core of the quadrupole field. By applying an oscillating radiofrequency voltage, they generate a time-varying potential that counteracts the natural tendency of ions to escape. This produces dynamic stability in the radial plane through alternating focusing and defocusing forces.
-
-    It is important to note that the rods cannot simply be held at static voltages. A purely static quadrupole potential would violate Earnshaw's theorem, which states that no collection of static electric fields can create a stable equilibrium point for a charged particle in free space:
-    
-
-\[
-    \Phi(x,y,z) = \frac{V}{2r_0^2}(x^2 - y^2).
-    \]
+\begin{figure}[h!tbp]
+    \centering
+    \includegraphics[width=0.4\linewidth]{PDF_Visuals/paul_trap_schematic.png}
+    \captionof{figure}{Schematic of RF Paul trap showing RF rods, DC endcaps, and vacuum chamber. Radial confinement arises from oscillating RF rods which produce a time-varying quadrupole potential that traps the $\mathrm{Yb}^{+}$ ion dynamically in the radial plane.}  
+\end{figure}
+   
+he electrodes in a quadrupole ion trap cannot simply be held at static voltages. A purely static quadrupole potential would violate \textbf{Earnshaw's theorem}, which states that no arrangement of static electric fields can create a stable equilibrium point for a charged particle in free space. The quadrupole potential is given by
 
 
-    Such a configuration confines in one radial direction but defocuses in the orthogonal direction, leading to instability.
-
-    The oscillating RF field solves this problem by creating a pseudo-potential:
-    
 
 \[
-    U_{\text{eff}}(r) = \frac{q^2 V^2}{4 m \Omega^2 r_0^2} \, r^2.
-    \]
+    \Phi(x,y,z) = \frac{V}{2r_0^2}(x^2 - y^2),
+\]
 
 
-    This time-averaged pseudo-potential produces stable confinement in the radial directions, circumventing Earnshaw's theorem. 
+
+where $V$ is the applied voltage and $r_0$ is the characteristic electrode spacing. This configuration confines ions along one radial axis while defocusing them along the orthogonal axis, producing a saddle-point potential that is inherently unstable.
+
+To achieve confinement, the static voltages are replaced with an oscillating radio-frequency (RF) field. The rapid alternation between focusing and defocusing directions prevents the ion from escaping, and over many cycles the particle experiences an effective restoring force toward the trap center. This mechanism is analogous to the stabilization of the Kapitza pendulum, where fast oscillations create stability in an otherwise unstable system.
+
+The time-averaged effect of the RF drive can be described by a \textbf{pseudo-potential}:
+
+
+
+\[
+    U_{\text{eff}}(r) = \frac{q^2 V^2}{4 m \Omega^2 r_0^2} \, r^2,
+\]
+
+
+
+with $q$ the ion charge, $m$ its mass, $\Omega$ the angular frequency of the RF drive, and $r$ the radial displacement. This effective potential is quadratic in $r$, resembling a harmonic oscillator well. Its strength scales with $V^2$ and decreases with increasing $m$ or $\Omega^{-2}$, meaning heavier ions are harder to confine while higher-frequency drives enhance stability.
+
+In practice, trapped ions exhibit two types of motion: fast \textbf{micromotion} at the RF frequency and slower \textbf{secular motion} within the pseudo-potential well. The overall stability of trajectories is governed by the \textbf{Mathieu equations}, which define regions of confinement depending on the RF amplitude and frequency. This principle underlies devices such as the Paul trap and quadrupole mass filters, where precise tuning of the pseudo-potential enables selective confinement or ejection of ions based on their mass-to-charge ratio. 
 
 \subsection{DC Endcaps: Axial Stability}
-\begin{figure}[htbp]
-\centering
-\begin{minipage}{0.49\textwidth}
-    \includegraphics[width=\linewidth]{PDF_Visuals/dc_endcaps.png}
-    \captionof{figure}{Illustration of DC endcaps providing axial confinement along the longitudinal axis of the trap.\\
-    \textbf{Subtitle:} DC endcaps establish a static potential well along the trap axis, preventing axial drift and enabling long-term confinement when combined with the RF radial pseudopotential.}
-\end{minipage}\hfill
-\begin{minipage}{0.49\textwidth}
-    \raggedright
-    \small
-    While the RF field stabilizes radial motion, it cannot prevent ions from drifting along the longitudinal axis. The DC endcaps address this limitation by providing static axial confinement. Their role is to establish a potential well along the trap’s axis:
-    
+
+While the RF field provides dynamic stabilization in the radial plane, it cannot prevent ions from drifting freely along the longitudinal ($z$) axis of the ion trap. To address this limitation, \textbf{DC endcap electrodes} are introduced. These electrodes establish a static potential well along the trap axis, which provides axial confinement and completes the three-dimensional trapping scheme.
+
+The axial potential can be expressed as
+
+
 
 \[
-    \Phi(z) = \frac{\kappa V_{\text{DC}}}{z_0^2} z^2,
-    \]
+    \Phi(z) = \frac{\kappa V_{\text{DC}}}{z_0^2} \, z^2,
+\]
 
 
-    where \(V_{\text{DC}}\) is the applied endcap voltage, \(z_0\) is the characteristic axial dimension, and \(\kappa\) is a geometry-dependent constant.
-\end{minipage}
+
+where $V_{\text{DC}}$ is the applied endcap voltage, $z_0$ is the characteristic axial dimension of the trap, and $\kappa$ is a geometry-dependent constant that accounts for electrode shape and spacing. This quadratic form resembles a harmonic oscillator potential, providing a restoring force that confines ions toward the trap center.
+
+\begin{figure}[h!tbp]
+\centering
+    \includegraphics[width=0.4\linewidth]{PDF_Visuals/dc_endcaps.png}   
+    \captionof{figure}{Illustration of DC endcaps providing axial confinement along the longitudinal axis of the trap.
+    DC endcaps establish a static potential well along the trap axis, preventing axial drift and enabling long-term confinement when combined with the RF radial pseudopotential.}
 \end{figure}
 
+Physically, the DC endcaps play a complementary role to the RF field, as he RF drive ensures radial stability by generating a time-averaged pseudo-potential, while the DC endcaps supply a static potential that confines ions axially. Together, they create a three-dimensional trapping environment. 
+In practice, the balance between RF and DC contributions must be carefully tuned. Too weak an endcap voltage leads to axial leakage, while excessive DC confinement can distort the radial pseudo-potential. 
+
+
 \subsection{Vacuum Region: Isolation and Longevity}
-\begin{figure}[htbp]
+\begin{figure}[h!tbp]
 \centering
-\begin{minipage}{0.49\textwidth}
-    \includegraphics[width=\linewidth]{PDF_Visuals/vacuum_mean_free_path.png}
-    \captionof{figure}{Diagram of mean free path in the vacuum region.\\
-    \textbf{Subtitle:} Sparse background gas molecules increase the mean free path, reducing collisions and preserving ion coherence.}
-\end{minipage}\hfill
-\begin{minipage}{0.49\textwidth}
-    \raggedright
-    \small
+
+    \includegraphics[width=0.3\linewidth]{PDF_Visuals/vacuum_mean_free_path.png}
+    \captionof{figure}{Diagram of mean free path in the vacuum region.
+    Sparse background gas molecules increase the mean free path, reducing collisions and preserving ion coherence.}
+\end{figure}
+
    Surrounding the electrodes is the vacuum region, which is not merely a passive enclosure but a critical component of the ion trap system. Its primary function is to drastically reduce the number of background gas molecules that could interact with the trapped ion. In the absence of sufficient vacuum, residual gas atoms can collide with the ion, causing unwanted momentum transfer, decoherence, and heating — all of which degrade trap performance and reduce confinement time. These collisions are especially problematic in precision applications such as quantum computing or spectroscopy, where long coherence times and minimal environmental noise are essential.
 
-The effectiveness of the vacuum is quantified by the mean free path \(\lambda\), which represents the average distance an ion can travel before experiencing a collision. It is given by:
-
+The effectiveness of the vacuum is quantified by the mean free path \(\lambda\), which represents the average distance an ion can travel before experiencing a collision. It is given by.
 
 
 \[
@@ -123,20 +143,17 @@ The effectiveness of the vacuum is quantified by the mean free path \(\lambda\),
 where \(k_B\) is Boltzmann’s constant, \(T\) is the temperature, \(d\) is the effective diameter of the gas molecules, and \(P\) is the pressure. As pressure decreases, \(\lambda\) increases exponentially, meaning ions can traverse the trap volume without interference. Achieving ultra-high vacuum (UHV) conditions — typically below \(10^{-9}\) Torr — ensures that \(\lambda\) is orders of magnitude larger than the trap dimensions, effectively suppressing ion loss due to scattering.
 
 From an engineering standpoint, maintaining UHV requires careful material selection, surface treatment, and bake-out procedures to eliminate outgassing. The trap chamber must be sealed with low-permeability materials and equipped with high-efficiency pumps such as turbomolecular or ion pumps. These measures collectively ensure that the vacuum region supports stable, long-duration trapping, enabling high-fidelity measurements and reliable ion manipulation.
-\end{minipage}
-\end{figure}
+
+
 
 \subsection{Interplay of Components}
-\begin{figure}[htbp]
+\begin{figure}[h!tbp]
 \centering
-\begin{minipage}{0.49\textwidth}
-    \includegraphics[width=\linewidth]{PDF_Visuals/trap_interplay.png}
-    \captionof{figure}{Composite schematic showing RF rods, DC endcaps, and vacuum chamber working together.\\
-    \textbf{Subtitle:} Stable confinement emerges only when dynamic radial forces, static axial potentials, and isolation are combined.}
-\end{minipage}\hfill
-\begin{minipage}{0.49\textwidth}
-    \raggedright
-    \small
+    \includegraphics[width=0.5\linewidth]{PDF_Visuals/trap_interplay.png}
+    \captionof{figure}{Composite schematic showing RF rods, DC endcaps, and vacuum chamber working together.
+    Stable confinement emerges only when dynamic radial forces, static axial potentials, and isolation are combined.}
+    \end{figure}
+
     Together, these three components—RF rods for radial confinement, DC endcaps for axial stability, and the vacuum region for isolation, form a carefully balanced system. Each element addresses a limitation of the others: the RF rods alone cannot trap ions, the DC endcaps alone cannot prevent radial escape, and neither can function effectively without the vacuum. 
 
     Stable confinement emerges only when dynamic and static potentials are combined in a low-pressure environment, reflecting the fundamental design principle of the Paul trap. The oscillating RF field generates a pseudo-potential that stabilizes radial motion, while the DC endcaps create a static quadratic potential well along the longitudinal axis. The vacuum ensures that these forces act coherently over longer timescales.
@@ -161,10 +178,10 @@ From an engineering standpoint, maintaining UHV requires careful material select
 
 
     This interplay is not just additive but synergistic: the RF and DC fields together establish a three-dimensional potential slope in which ions can be localized with high precision. The vacuum region amplifies this stability by extending ion lifetimes.
-\end{minipage}
-\end{figure}
 
-\section{Visual Evidence}
+
+
+\section{Mathematical Framework}
 \begin{figure}[htbp]
 \centering
 \begin{minipage}{0.49\textwidth}
@@ -180,22 +197,12 @@ From an engineering standpoint, maintaining UHV requires careful material select
 \end{figure}
 
 
-\section{Analysis \& Discussion}
-\begin{itemize}
-    \item \textbf{Trap depth:} Varying rod spacing and electrode length had the strongest influence on trap depth. Optimized configurations produced deeper potential wells, improving confinement stability and robustness against stray fields.
-    
-    \item \textbf{Offset and symmetry:} Voltage adjustments and geometric refinements revealed that electrode symmetry was critical for minimizing offset. The parabolic rod design reduced misalignment compared to the baseline, resulting in a more centered ion position.
-    
-    \item \textbf{Power efficiency:} MATLAB–COMSOL optimization highlighted the trade-off between deeper traps and RF power consumption. While stronger confinement often required higher power, systematic tuning identified parameter sets that balanced efficiency with performance.
-    
-    \item \textbf{Trade-offs:} Incremental tuning of the baseline design yielded immediate improvements with relatively low complexity. In contrast, geometric innovation (parabolic rods) offered longer-term potential for enhanced confinement but introduced additional optimization challenges and higher sensitivity to parameter choices.
-    
-    \item \textbf{Overall insight:} The analysis demonstrated the interplay between physical intuition and computational optimization. Deeper traps improve robustness, centered ions reduce instability, and efficient power usage ensures scalability. Each design decision required balancing these priorities to achieve a well-performing trap.
-\end{itemize}
+\section{Optimization}
+
+\subsection{Potential Approaches}
+There are two main approaches to optimizing the ion trap design: modifying the geometries of the Ion trap, or adjusting the operating parameters such as voltages frequencies and dimentions of the RF Paul Trap.
 
 
-Discuss trade-offs (e.g., deeper trap but higher power, symmetry vs. complexity).
-Note any unexpected artifacts or limitations.
 
 \section{Conclusion}
 Summarize why your design is effective.

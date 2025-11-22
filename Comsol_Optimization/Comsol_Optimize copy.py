@@ -4,6 +4,7 @@ import sys
 import csv
 from scipy.optimize import minimize
 import os
+import traceback
 
 # --- Baseline values from COMSOL GUI ---
 baseline_values = {
@@ -22,8 +23,8 @@ baseline_values = {
 # --- Target values for normalization ---
 targets = {
     "depth_eV": 5.0,     # want >= 5 eV
-    "offset_mm": 0.001,    # want ~0 mm
-    "P_est_mW": 1000.0      # want ~1000 mW
+    "offset_mm": 0.001,  # want ~0 mm
+    "P_est_mW": 1000.0   # want ~1000 mW
 }
 
 # --- Weights for each objective ---
@@ -33,20 +34,26 @@ weights = {
     "P_est_mW": 0.8
 }
 
-
+# --- Bounds in physical units ---
 bounds = [
-
     (0, 1000),      # V_rf
-    (0, 500),      # V_dc
-    (0, 500),        # V_endcap
+    (0, 500),       # V_dc
+    (0, 500),       # V_endcap
     (0.003, 0.1),   # rod_spacing
-    (0.0005, 0.008), # rod_radius
+    (0.0005, 0.008),# rod_radius
     (0.02, 0.1),    # rod_length
     (0.0, 0.01),    # endcap_offset
     (0.005, 0.01),  # endcap_rad
-    (0.0001, 0.001), # endcap_thick
-    (1e6, 1e8)       # f
-    ]
+    (0.0001, 0.001),# endcap_thick
+    (1e6, 1e8)      # f
+]
+
+# --- Normalization helpers ---
+def normalize(x, bounds):
+    return [(xi - low) / (high - low) for xi, (low, high) in zip(x, bounds)]
+
+def denormalize(y, bounds):
+    return [low + yi * (high - low) for yi, (low, high) in zip(y, bounds)]
 
 def find_model_file(preferred_name: str = "3d_pole_trap - Copy.mph") -> Path:
     cwd = Path(__file__).resolve().parent
@@ -67,6 +74,8 @@ def find_model_file(preferred_name: str = "3d_pole_trap - Copy.mph") -> Path:
     print(f"No .mph model file found in {cwd}. Please place your COMSOL model there or provide the correct path.")
     sys.exit(2)
 
+
+    
 def try_eval(model, name):
     try:
         return float(model.evaluate(name))
@@ -80,18 +89,18 @@ def objective(depth_eV, offset_mm, P_est_mW):
     power_score  = (targets["P_est_mW"] + 1e-9) / (P_est_mW + 1e-9)
 
     print(depth_score, offset_score, power_score)
-    print((weights["depth_eV"] * depth_score), \
-          (weights["offset_mm"] * offset_score), \
+    print((weights["depth_eV"] * depth_score),
+          (weights["offset_mm"] * offset_score),
           (weights["P_est_mW"] * power_score))
 
     # Weighted sum
-    score = (weights["depth_eV"] * depth_score) \
-          + (weights["offset_mm"] * offset_score) \
-          + (weights["P_est_mW"] * power_score)
+    score = (weights["depth_eV"] * depth_score
+           + weights["offset_mm"] * offset_score
+           + weights["P_est_mW"] * power_score)
     return score
 
 def run_trial(params, model, writer, filename):
-    # unpack params
+    # params are in PHYSICAL units here
     V_rf, V_dc, V_endcap, rod_spacing, rod_radius, rod_length, endcap_offset, endcap_rad, endcap_thick, f = params
 
     # set COMSOL parameters
@@ -134,78 +143,88 @@ def run_trial(params, model, writer, filename):
     if depth_eV < 0.0001:
         print("Depth too low, penalizing")
         score = -1e6
-
     if P_est_mW < 10:
         print("Power probably a lie, penalizing")
         score = -1e6
 
     try:
-        # write a row using the provided DictWriter and flush the underlying file
         writer.writerow({
                 "V_rf": V_rf, "V_dc": V_dc, "V_endcap": V_endcap,
                 "rod_spacing": rod_spacing, "rod_radius": rod_radius,
-                "rod_length": rod_length, "endcap_offset": endcap_offset,""
+                "rod_length": rod_length, "endcap_offset": endcap_offset,
                 "endcap_rad": endcap_rad, "endcap_thick": endcap_thick, "f": f,
                 "depth_eV": depth_eV, "offset_mm": offset_mm,
                 "P_est_mW": P_est_mW, "score": score
             })
         filename.flush()
         os.fsync(filename.fileno())
-
         print("Row written")
     except Exception as e:
         print("Failed to write row:", e)
 
     return -score  # minimize negative score
+
+def normalized_objective(y, model, writer, filename):
+    # y is in [0,1]^n
+    x = denormalize(y, bounds)  # convert to physical units
+    return run_trial(x, model, writer, filename)
+
 def main():
     model_path = find_model_file()
     print("Starting COMSOL client...")
-    client = mph.start(cores=8, version="6.3") #THE CORE COUNT IS SO IMPORTANT GODDAMNIT KEEP IT 8
+    client = mph.start(cores=8, version="6.3")
 
     try:
         print(f"Loading model: {model_path}")
         model = client.load(str(model_path))
 
-        # --- Print all COMSOL parameters (expression + value) ---
         print("\n📋 All COMSOL parameters:")
         exprs = model.parameters()
         for name, expr in exprs.items():
             val = model.parameter(name)
             print(f"  {name:<20} | Expression: {expr:<10} | Value: {val}")
-        x0 = [baseline_values["V_rf"], baseline_values["V_dc"], baseline_values["V_endcap"],
-                  baseline_values["rod_spacing"], baseline_values["rod_radius"],
-                  baseline_values["rod_length"], baseline_values["endcap_offset"],
-                  baseline_values["endcap_rad"],baseline_values["endcap_thick"],
-                  baseline_values["f"]]
 
-            
+        # baseline in physical units
+        x0 = [baseline_values["V_rf"], baseline_values["V_dc"], baseline_values["V_endcap"],
+              baseline_values["rod_spacing"], baseline_values["rod_radius"],
+              baseline_values["rod_length"], baseline_values["endcap_offset"],
+              baseline_values["endcap_rad"], baseline_values["endcap_thick"],
+              baseline_values["f"]]
+
+        # normalize baseline
+        y0 = normalize(x0, bounds)
 
         with open("optimization_log.csv", "w", newline="") as filename:
             fieldnames = ["V_rf","V_dc","V_endcap","rod_spacing","rod_radius",
-                                "rod_length","endcap_offset", "endcap_rad","endcap_thick","f",
-                                "depth_eV","offset_mm","P_est_mW","score"]
+                          "rod_length","endcap_offset","endcap_rad","endcap_thick","f",
+                          "depth_eV","offset_mm","P_est_mW","score"]
             writer = csv.DictWriter(filename, fieldnames=fieldnames)
             writer.writeheader()
 
-            # run optimizer, passing both the DictWriter and the open file handle for flushing
-            result = minimize( lambda p: run_trial(p, model, writer, filename),
-                        x0,
-                        method="SLSQP",
-                        bounds=bounds,
-                        options={"maxiter": 5000})
-        
-        
+            # run optimizer in normalized space
+            result = minimize(lambda y: normalized_objective(y, model, writer, filename),
+                              y0,
+                              method="Nelder-Mead",
+                              options={"maxiter": 2000, "xatol": 1e-9, "fatol": 1e-9})
+
+        print("Optimization result (normalized):", result)
+        best_params = denormalize(result.x, bounds)
+        print("Best physical parameters:", best_params)
+
         model.save()
         client.remove(model)
 
     except Exception as e:
         print("❌ Exception occurred:")
-        print(e)
+        traceback.print_exc()
         try:
-            client.remove_all()
-        except Exception:
+            client.stop()
+        except:
             pass
-        raise
-
+    sys.exit(1)
 if __name__ == "__main__":
-    main()
+    print("Starting script...")
+    try:
+        main()
+    except Exception as e:
+        print("❌ Exception at top level:", e)

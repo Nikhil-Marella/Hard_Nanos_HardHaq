@@ -10,7 +10,10 @@
 \usepackage{amsmath}
 \geometry{margin=1in}
 \usepackage{pgfplotstable}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta}
 \pgfplotsset{compat=1.18}
+\usepackage{hyperref}
 \usepackage[font=small,labelfont=bf]{caption}
 
 
@@ -84,12 +87,12 @@ The time-averaged effect of the RF drive can be described by a \textbf{pseudo-po
 
 
 \[
-    U_{\text{eff}}(r) = \frac{q^2 V^2}{4 m \Omega^2 r_0^2} \, r^2,
+    \Psi(r) = \frac{Q^2 V^2}{4 m \Omega^2 r_0^2} \, r^2,
 \]
 
 
 
-with $q$ the ion charge, $m$ its mass, $\Omega$ the angular frequency of the RF drive, and $r$ the radial displacement. This effective potential is quadratic in $r$, resembling a harmonic oscillator well. Its strength scales with $V^2$ and decreases with increasing $m$ or $\Omega^{-2}$, meaning heavier ions are harder to confine while higher-frequency drives enhance stability.
+with $Q$ the ion charge, $m$ its mass, $\Omega$ the angular frequency of the RF drive, and $r$ the radial displacement. This effective potential is quadratic in $r$, resembling a harmonic oscillator well. Its strength scales with $V^2$ and decreases with increasing $m$ or $\Omega^{-2}$, meaning heavier ions are harder to confine while higher-frequency drives enhance stability.
 
 In practice, trapped ions exhibit two types of motion: fast \textbf{micromotion} at the RF frequency and slower \textbf{secular motion} within the pseudo-potential well. The overall stability of trajectories is governed by the \textbf{Mathieu equations}, which define regions of confinement depending on the RF amplitude and frequency. This principle underlies devices such as the Paul trap and quadrupole mass filters, where precise tuning of the pseudo-potential enables selective confinement or ejection of ions based on their mass-to-charge ratio. 
 
@@ -182,20 +185,130 @@ From an engineering standpoint, maintaining UHV requires careful material select
 
 
 \section{Mathematical Framework}
-\begin{figure}[htbp]
-\centering
-\begin{minipage}{0.49\textwidth}
-    \includegraphics[width=\linewidth]{PDF_Visuals/trap_geometry.png}
-    \captionof{figure}{\textcolor{IonBlue}{Modified trap geometry with reduced offset.}\\
-    \textbf{Subtitle:} The modified geometry reduces electrode offset while preserving symmetry. This snapshot shows electrode contours and highlights the targeted geometric adjustments.}
-\end{minipage}\hfill
-\begin{minipage}{0.49\textwidth}
-    \raggedright
-    \small
-    This figure shows the final geometry used in our optimized trap design. The reduced offset improves symmetry and confinement efficiency, as confirmed by the trap metrics and potential distribution.
-\end{minipage}
-\end{figure}
+\subsection{Shorthand useful relations}
+The Mathieu parameter (radial) is
+\begin{equation}
+  q \;=\; \frac{2 Q V}{m r_0^2 \Omega^2}.
+\end{equation}
+% Definitions introduced at first use
+Here $Q$ is the ion charge (C), $m$ is the ion mass (kg), $V$ is the RF peak amplitude (V), $\Omega$ is the RF angular frequency (rad\,s$^{-1}$), and $r_0$ is the characteristic trap radius (m).
+The secular frequency (radial secular motion) in the small-$q$ limit is approximated by
+\begin{equation}
+  \omega_{\mathrm{sec}} \;\approx\; \frac{q}{2\sqrt{2}}\,\Omega
+  \;=\; \frac{Q V}{\sqrt{2}\, m r_0^2 \Omega}.
+\end{equation}
 
+\subsection[Pseudopotential depth (U_depth)]{Pseudopotential depth (\(U_{\mathrm{depth}}\))}
+\subsubsection{Governing formula}
+The time-averaged pseudopotential (in 1D radial coordinate $r$ for an ideal quadrupole) is
+\[
+\Psi(r) \;=\; \frac{Q^2}{4 m \Omega^2}\,|\mathbf{E}_{\rm rf}(r)|^2.
+\]
+% Definition: pseudopotential
+\par
+\noindent Here $\Psi(\mathbf r)$ is the time-averaged pseudopotential (J).
+For the ideal quadrupole field amplitude $|\mathbf{E}_{\rm rf}|\!\sim\! V r / r_0^2$, this gives a quadratic pseudopotential:
+\[
+\Psi(r) \;=\; \kappa\,\frac{Q^2 V^2}{4 m \Omega^2 r_0^4}\; r^2,
+\]
+so a characteristic \emph{trap depth} (energy scale between center and effective boundary $r\!\sim\!r_0$) is commonly approximated as
+\begin{equation}\label{eq:Udepth}
+  U_{\rm depth} \;\approx\; \kappa\,\frac{Q^2 V^2}{4 m \Omega^2 r_0^2}.
+\end{equation}
+\par
+\noindent Here $U_{\rm depth}$ denotes the trap depth (J) and $\kappa$ is a dimensionless geometry factor (order unity).
+An alternative useful form in terms of the Mathieu parameter $q$ is
+\begin{equation}\label{eq:Udepth_q}
+  U_{\rm depth} \;=\; \kappa\,\frac{m \Omega^2 r_0^2}{16}\; q^2.
+\end{equation}
+
+\subsubsection{How each variable affects depth}
+\begin{itemize}
+  \item \textbf{RF amplitude $V$:} $U_{\rm depth}\propto V^2$. \emph{Increasing $V$ increases depth quadratically.}
+  \item \textbf{Drive frequency $\Omega$:} $U_{\rm depth}\propto 1/\Omega^2$. \emph{Increasing $\Omega$ reduces depth (inverse square).}
+  \item \textbf{Trap size $r_0$:} $U_{\rm depth}\propto 1/r_0^2$. \emph{Increasing $r_0$ decreases depth (inverse square).}
+  \item \textbf{Ion properties $Q,m$:} $U_{\rm depth}\propto Q^2/m$. Higher charge increases depth; heavier mass decreases depth.
+  \item \textbf{Geometry $\kappa$:} improves depth linearly with $\kappa$ (ideal electrodes have $\kappa\!\approx\!1$).
+\end{itemize}
+
+\subsubsection{Practical remarks and trade-offs}
+\begin{itemize}
+  \item Increasing $V$ increases $q$. Large $q$ invalidates the pseudopotential approximation and increases micromotion.
+\end{itemize}
+
+\subsection{Center offset ({$x_0$}) — static displacement and micromotion}
+\subsubsection{Governing formula}
+If a stray DC electric field $E_{\rm dc}$ exists at the trap center, it exerts a force $Q E_{\rm dc}$ on the ion. Balance this against the secular restoring force $m \omega_{\mathrm{sec}}^2 x$ to obtain the static displacement (offset) $x_0$:
+\begin{equation}\label{eq:x0}
+  x_0 \;=\; \frac{Q E_{\rm dc}}{m \omega_{\mathrm{sec}}^2}.
+\end{equation}
+\par
+\noindent where $E_{\mathrm{dc}}$ is the stray DC electric field (V/m) producing the static offset.
+Using the small-$q$ expression for $\omega_{\mathrm{sec}}$,
+\[
+\omega_{\mathrm{sec}} \approx \frac{Q V}{\sqrt{2}\, m r_0^2 \Omega},
+\]
+we can express $x_0$ in terms of trap parameters:
+\begin{equation}\label{eq:x0_expanded}
+  x_0 \;\approx\; \frac{Q E_{\rm dc}}{m}\left(\frac{\sqrt{2}\, m r_0^2 \Omega}{Q V}\right)^{\!2}
+  \;=\; \frac{2 m r_0^4 \Omega^2}{Q V^2}\;E_{\rm dc}.
+\end{equation}
+
+\subsubsection{Excess micromotion amplitude (leading order)}
+For small $q$ the amplitude of \emph{excess} micromotion driven at RF frequency is approximately proportional to $q$ times the static offset:
+\begin{equation}
+  x_{\rm mm} \;\approx\; \frac{q}{2}\,x_0.
+\end{equation}
+Kinetic energy associated with excess micromotion scales as $\sim \tfrac{1}{2} m (\Omega x_{\rm mm})^2$.
+
+\subsubsection{How each variable affects center offset}
+\begin{itemize}
+  \item \textbf{Stray field $E_{\rm dc}$:} $x_0\propto E_{\rm dc}$ (linear). More stray field $\Rightarrow$ larger offset.
+  \item \textbf{Secular stiffness $\omega_{\rm sec}$:} $x_0\propto 1/\omega_{\rm sec}^2$. Stronger confinement (higher $\omega_{\rm sec}$) $\Rightarrow$ smaller $x_0$.
+  \item \textbf{RF amplitude $V$:} Increasing $V$ increases $\omega_{\rm sec}$ (for fixed $\Omega$ and $r_0$) and thus reduces $x_0$; but increasing $V$ also increases $q$ and so multiplies offset into micromotion amplitude.
+  \item \textbf{Drive frequency $\Omega$:} Appears in $\omega_{\mathrm{sec}}$ inversely; higher $\Omega$ (for fixed $V$) tends to reduce $x_0$ via $\omega_{\mathrm{sec}}$ formula in practice.
+  \item \textbf{Trap size $r_0$:} Larger $r_0$ reduces secular frequency (for fixed $V,\Omega$) so $x_0$ grows with $r_0$.
+\end{itemize}
+
+\subsubsection{Minimization strategies}
+\begin{itemize}
+  \item \textbf{Increase secular stiffness:} Raise $V$ or reduce $r_0$ (within other constraints) to reduce $x_0$.
+  \item \textbf{Balance trade-offs:} Increasing $V$ reduces $x_0$ but increases $q$ (and thus micromotion amplitude $x_{\rm mm}\propto q x_0$). Optimize to minimize residual micromotion energy.
+\end{itemize}
+
+\subsection{RF power and power-per-depth (\texorpdfstring{$P/U_{\mathrm{depth}}$}{P/U_depth})}
+\subsubsection{Model for RF power}
+The RF power is modelled by the following equation extracted from the COMSOL file:
+\begin{equation}\label{eq:Pdiss}
+  P_{\mathrm{est}} \;=\; 10^{3}\left(\omega_{\mathrm{sec}}\big(\varepsilon\pi L\big)\frac{V_{\mathrm{rf}}}{\sqrt{2}}\right)^{2}
+\end{equation}
+Here $V_{\mathrm{rf}}$ is the RF peak amplitude. In practice, $P_{\mathrm{est}}$ also depends on the effective electrode capacitance and series resistance of the RF drive and electrode structure (but, we assume it is negligible).
+
+\subsubsection{Power per depth}
+Combine \eqref{eq:Pdiss} with the depth formula \eqref{eq:Udepth} which scales as $U_{\rm depth}\propto V^2$. Eliminating $V^2$ yields:
+\begin{equation}\label{eq:PoverU_raw}
+  \frac{P_{\mathrm{est}}}{U_{\rm depth}}
+  \;\propto\; \frac{10^{3}\left(\omega_{\mathrm{sec}}\big(\varepsilon\pi L\big)\frac{V_{\mathrm{rf}}}{\sqrt{2}}\right)^{2}}{\;\kappa\,\frac{m \Omega^2 r_0^2}{16}\; q^2\;}  \Rightarrow ...
+  \Rightarrow \frac{P_{\mathrm{est}}}{U_{\rm depth}} \propto \frac{10^{3}(\varepsilon\pi L)^{2}  V_{\mathrm{rf}}^{2}}{\kappa m r_{0}^{2}}.
+\end{equation}
+where the constant prefactor depends on the precise definitions used for $U_{\rm depth}$ and $P_{\rm est}$; the displayed scaling is the relevant design dependence.
+
+\subsubsection{How each variable affects $P/U_{\rm depth}$}
+\begin{itemize}
+  \item \textbf{Trap size $r_0$:} $P/U_{\rm depth}\propto r_0^2$ (scales with trap area/size) — larger traps cost more power per depth.
+  \item \textbf{Ion properties:} $P/U_{\rm depth}\propto m/Q^2$ — heavier ions increase power per depth; higher ionic charge reduces it.
+  \item \textbf{RF voltage $V_{\rm rf}$:} $P/U_{\mathrm{depth}}\propto V_{\rm rf}^{2}$;  
+      smaller $V_{\rm rf}$ reduces power cost.
+  \item \textbf{Electrode length $L$:} $P/U_{\mathrm{depth}}\propto L^{2}$;  
+      smaller $L$ reduces power cost if the quadrupole field quality is preserved.
+
+\end{itemize}
+
+\subsubsection{Minimization of $P/U_{\rm depth}$}
+\begin{enumerate}
+  \item \textbf{Choose moderate $\Omega$:} Avoid excessively high drive frequencies unless required for stability/performance.
+  \item \textbf{Reduce $r_0$ where acceptable:} Smaller traps require less RF voltage for a given depth.
+\end{enumerate}
 
 \section{Optimization}
 
@@ -245,18 +358,156 @@ Altering electrode shapes, spacings, or overall trap dimensions provides a more 
     Initial voltages, frequencies, and dimensions set the baseline before any optimization.}
 \end{figure}
 
+Given the benefits of both optimizing values and geometries, our team elected to focus primarily on parameter optimization at the beginning of the challenge. This approach allowed us to rapidly iterate and explore a wide parameter space without the overhead of physical redesign. By leveraging computational tools to simulate trap performance under varying conditions, we could identify optimal settings that maximized trap depth, minimized offset, and controlled power consumption.
+Over the course of the challenge, we also explored geometric modifications to further enhance performance based on insights gained from our algorithmic parameter sweeps.
+
+\subsection{Optimizing Parameters}
+
+
+In our approach to optimizing the values of the parameters, we developed a Python script that interfaces with COMSOL's \texttt{mph} module to iteratively adjust key operating parameters of the ion trap model. The goal was to maximize trap depth while minimizing offset and power consumption, all within physically meaningful bounds.
+Because of the nature of the offset, minimizing it proved to be rather difficult, so the ratio of depth to power consumption was the main objective of the optimization script.
+
+\vspace{\baselineskip}
+
+The script attempts to optimize physical parameters of an ion trap model in COMSOL by coupling
+the \texttt{mph} Python interface with SciPy's \texttt{minimize} routine. The workflow can be
+summarized as follows:
+
+\begin{itemize}
+    \item \textbf{Baseline, Targets, and Weights:} 
+    Baseline values are taken from the COMSOL GUI and serve as the starting point. 
+    Target values specify desired outcomes (e.g., trap depth $\geq 5$ eV, offset $\approx 0$ mm, 
+    power $\approx 10$ mW). Each objective is assigned a weight to reflect its relative importance, and each objective is designed to be just beyond what we thought was realistically achievable.
+
+    \item \textbf{Bounds:} 
+    Each parameter is constrained to physically meaningful ranges 
+    (e.g., $0 \leq V_{\mathrm{rf}} \leq 1000$, $10^{6} \leq f \leq 10^{8}$). 
+    These bounds are used to normalize parameters into the unit cube $[0,1]^n$ for optimization 
+    and then denormalize them back to physical units before evaluation.
+
+    \item \textbf{Objective Function:} 
+    The function computes normalized scores relative to targets:
+    
+
+\[
+        \text{depth score} = \frac{\text{depth}}{\text{target depth}}, \quad
+        \text{offset score} = \frac{\text{target offset}}{\text{actual offset}}, \quad
+        \text{power score} = \frac{\text{target power}}{\text{actual power}}.
+    \]
+
+
+    These are combined into a weighted sum. Higher scores indicate better performance.
+
+    \item \textbf{Trial Execution:} 
+    For each candidate parameter set, values are pushed into the COMSOL model, 
+    the study is solved, and metrics such as trap depth, offset, and power are extracted. 
+    Penalties are applied if results are unphysical. The optimizer minimizes the negative score, 
+    effectively maximizing performance.
+
+    \item \textbf{Optimization Loop:} 
+    The Nelder--Mead algorithm iteratively proposes new parameter sets in normalized space, 
+    evaluates them via COMSOL, and updates its simplex until convergence or iteration limits are reached.
+
+    \item \textbf{Logging:} 
+    Each trial's parameters and results are written to a CSV file for record-keeping and more in-depth analysis.
+\end{itemize}
+\begin{figure}[h!tbp]
+\centering
+\begin{tikzpicture}[scale=0.85, transform shape, node distance=2.5cm and 2.8cm, >=stealth, thick]
+    % Styles
+    \tikzstyle{optimizer}=[rectangle, draw, rounded corners, fill=blue!20, align=center, minimum width=4.2cm, minimum height=1.2cm]
+    \tikzstyle{comsol}=[rectangle, draw, rounded corners, fill=green!20, align=center, minimum width=4.2cm, minimum height=1.2cm]
+    \tikzstyle{objective}=[rectangle, draw, rounded corners, fill=orange!20, align=center, minimum width=4.2cm, minimum height=1.2cm]
+
+    % Horizontal top row
+    \node (start) [optimizer] {Solver/Optimizer \\ (e.g., Nelder--Mead)};
+    \node (params) [optimizer, right=of start] {Propose Parameters \\ (normalized space)};
+    \node (denorm) [optimizer, right=of params] {Denormalize to Physical Units};
+
+    % Vertical drop
+    \node (comsol) [comsol, below=of denorm] {COMSOL Model \\ (solve study)};
+    \node (metrics) [comsol, below=of comsol] {Extract Metrics \\ (efficiency, offset, power)};
+    \node (objective) [objective, below=of metrics] {Compute Objective Score \\ + Apply Penalties};
+
+    % Horizontal return path
+    \node (update) [optimizer, left=of objective] {Return Negative Score \\ to Optimizer};
+
+    % Arrows with labels and routing
+    \draw[->] (start.east) -- (params.west) node[midway,above] {\small guess};
+    \draw[->] (params.east) -- (denorm.west) node[midway,above] {\small norm $\to$ phys};
+    \draw[->] (denorm.south) -- (comsol.north) node[midway,right] {\small set parameters};
+    \draw[->] (comsol.south) -- (metrics.north) node[midway,right] {\small simulation results};
+    \draw[->] (metrics.south) -- (objective.north) node[midway,right] {\small evaluate metrics};
+    \draw[->] (objective.west) -- (update.east) node[midway,below] {\small score + penalty};
+    \draw[->] (update.north) to[out=90,in=270] node[midway,left] {\small feeding back into solver} (start.south);
+
+\end{tikzpicture}
+\caption{simulation-driven optimization loop using SciPy and COMSOL. Parameters are proposed, evaluated, and scored before looping back.}
+\label{fig:iontrap-optimization-loop-horizontal}
+\end{figure}
 
 
 
+In summary, the script establishes a simulation-driven optimization loop:
+
+\clearpage
+\subsection{Geometric Modification}
+
+In addition to parameter optimization, we explored modifications to the electrode geometry itself. 
+The change we ultimately attempted to implement was a reshaping of the electrodes into an 
+hourglass profile. By tapering the electrode structure, the constriction is supposed to generate additional 
+vertical confinement forces that pushes the ion inward along the $z$-axis. The intended effect of this is to provide direct 
+assistance to the endcap electrodes in minimizing axial motion.
+
+The hourglass geometry also was intended to assist in reducing offset. Its symmetric focusing of the 
+pseudo-potential toward the trap center conceptually would help stabilize the ion's position while maintaining 
+radial uniformity.
+
+Unfortunately, we were unable to fully implement and test this geometric modification
+within the COMSOL environment. However, we believe that such geometric changes hold promise for further enhancing
+trap performance beyond what parameter tuning alone can achieve.
+
+\begin{figure}[h!tbp]
+    \centering
+    \includegraphics[width=0.8\linewidth]{PDF_Visuals/hourglass.jpg}
+    \captionof{figure}{Pictured above is a conceptual rendering of the hourglass electrode geometry.
+    The tapered design aims to enhance axial confinement and reduce offset by focusing the pseudo-potential toward the trap center.}
+\end{figure}
+
+
+\clearpage
 \section{Conclusion}
-Summarize why your design is effective.
-State the main improvement achieved (e.g., “Our design reduced offset by 40\% while maintaining comparable depth”).
+Through parameter optimization, our team achieved a final Trap Metrics table with the following key results:
+\begin{table}[h!]
+\centering
+\caption{Optimization Results for Ion Trap Parameters}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|c|c|}
+\hline
+\textbf{V\_rf} & \textbf{V\_dc} & \textbf{V\_endcap} & \textbf{rod\_spacing} & \textbf{rod\_radius} & \textbf{rod\_length} & \textbf{endcap\_offset} & \textbf{endcap\_rad} & \textbf{endcap\_thick} & \textbf{f} \\
+\hline
+0.3887 & 76.5038 & 8.3279 & 0.00586 & 0.00179 & 0.04221 & 0.00096 & 0.00608 & 0.00052 & 9514109.64 \\
+\hline
+\end{tabular}%
+}
+\end{table}
 
-\section{Optional Extensions}
-If you explored unconventional geometries, parameter sweeps, or anisotropic traps, describe them briefly.
-Mention any future directions or open questions.
+\begin{table}[h!]
+\centering
+\caption{Trap Metrics from COMSOL Global Evaluation}
+\begin{tabular}{|c|c|c|c|c|c|c|c|}
+\hline
+\textbf{depth\_eV} & \textbf{minU\_eV} & \textbf{maxU\_eV} & \textbf{trap\_x} & \textbf{trap\_y} & \textbf{trap\_z} & \textbf{offset\_mm} & \textbf{P\_est\_mW} \\
+\hline
+0.9755 & 74.3162 & 75.2917 & 0 & -5.0E-6 & 0.01 & 10.0000 & 0.01083 \\
+\hline
+\end{tabular}
+\end{table}
 
-\section*{Deliverables Checklist}
+These results reflect an incredible improvement over the baseline configuration, demonstrating the effectiveness of our optimization strategy in enhancing trap performance without geometrically changing the electrode structure.
+
+
+
 \begin{itemize}
     \item Exported Trap Metrics table (.txt file)
     \item Screenshot(s) of geometry and potential distribution
@@ -265,4 +516,3 @@ Mention any future directions or open questions.
 \end{itemize}
 
 \end{document}
-

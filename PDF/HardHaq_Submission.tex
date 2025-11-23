@@ -200,7 +200,51 @@ From an engineering standpoint, maintaining UHV requires careful material select
 \section{Optimization}
 
 \subsection{Potential Approaches}
-There are two main approaches to optimizing the ion trap design: modifying the geometries of the Ion trap, or adjusting the operating parameters such as voltages frequencies and dimentions of the RF Paul Trap.
+
+There are two main strategies for optimizing the ion trap design: (1) modifying the geometries of the trap electrodes, and (2) adjusting the operating parameters such as voltages, frequencies, and characteristic dimensions of the RF Paul trap. Each approach offers distinct advantages and limitations.
+
+\paragraph{Optimizing Operating Parameters}
+Tuning parameters such as RF voltage amplitude, drive frequency, and endcap potentials is often the most accessible method of optimization.
+\begin{itemize}
+    \item \textbf{Pros:}
+    \begin{itemize}
+        \item Rapid and flexible adjustments without requiring physical redesign of the trap.
+        \item Enables fine control over stability regions defined by the Mathieu equations.
+        \item Lower cost and shorter iteration cycles, since changes are implemented electronically.
+        \item Useful for adapting a single trap geometry to different ion species or experimental conditions.
+    \end{itemize}
+    \item \textbf{Cons:}
+    \begin{itemize}
+        \item Limited by the intrinsic geometry of the electrodes; cannot overcome fundamental design constraints.
+        \item High voltages or frequencies may introduce technical challenges such as dielectric breakdown, heating, or increased micromotion.
+        \item Optimization may be bounded by available electronics and power-handling capabilities.
+    \end{itemize}
+\end{itemize}
+
+\paragraph{Modifying Trap Geometries}
+Altering electrode shapes, spacings, or overall trap dimensions provides a more fundamental route to optimization.
+\begin{itemize}
+    \item \textbf{Pros:}
+    \begin{itemize}
+        \item Directly improves field uniformity and reduces anharmonicities in the pseudo-potential.
+        \item Can expand stability regions and reduce sensitivity to parameter fluctuations.
+        \item Enables custom designs tailored to specific applications (e.g., quantum computing, precision spectroscopy).
+    \end{itemize}
+    \item \textbf{Cons:}
+    \begin{itemize}
+        \item Requires fabrication of new hardware, which is costly and time-consuming.
+        \item Less flexible once built; geometry changes cannot be easily undone.
+        \item Complex geometries may introduce alignment issues or machining tolerances that degrade performance.
+    \end{itemize}
+\end{itemize}
+
+\begin{figure}[h!tbp]
+    \centering
+    \includegraphics[width=0.8\linewidth]{PDF_Visuals/Default_Parameters.png}
+    \captionof{figure}{Default operating parameters of the RF Paul trap.
+    Initial voltages, frequencies, and dimensions set the baseline before any optimization.}
+\end{figure}
+
 
 
 

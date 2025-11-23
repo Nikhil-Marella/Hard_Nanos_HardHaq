@@ -18,6 +18,11 @@ baseline_values = {
     "endcap_offset": 0.001
 }
 
+# Enforcement configuration: safety factor and reasonable bounds for sphere radius (multiples of rod_radius)
+SPHERE_SAFETY_FACTOR = 1.05
+MIN_SPHERE_MULT = 5.0
+MAX_SPHERE_MULT = 50.0
+
 # --- Target values for normalization ---
 targets = {
     "depth_eV": 9.0,     # want >= 5 eV, was 5.0eV
@@ -72,7 +77,7 @@ def objective(depth_eV, offset_mm, P_est_mW):
     score = (weights["depth_eV"] * depth_score) \
           + (weights["offset_mm"] * offset_score) \
           + (weights["P_est_mW"] * power_score)
-    return score
+    ret+urn score
 
 def run_trial(params, model, writer, f, enforce=True):
     # enforce inscribed-sphere constraint so the geometry does not exceed the sphere surface
@@ -90,9 +95,10 @@ def run_trial(params, model, writer, f, enforce=True):
         rod_length = float(p[i_length])
         endcap_offset = float(p[i_endcap_off])
 
-        # attempt to read endcap_thick from model parameters if available
+        # attempt to read endcap_thick and endcap_rad from model parameters if available
         # Use numeric evaluation (model.evaluate) via try_eval to avoid expression/unit strings
         endcap_thick = 0.0
+        endcap_rad = 0.0
         if model_obj is not None:
             try:
                 val = try_eval(model_obj, "endcap_thick")
@@ -100,25 +106,34 @@ def run_trial(params, model, writer, f, enforce=True):
                     endcap_thick = float(val)
             except Exception:
                 endcap_thick = 0.0
+            try:
+                val2 = try_eval(model_obj, "endcap_rad")
+                if val2 is not None:
+                    endcap_rad = float(val2)
+            except Exception:
+                endcap_rad = 0.0
 
-        # cylinder radius includes rod_radius
+        # structure radius is the max of pole-cylinder radius and endcap radius
         cyl_radius = (rod_spacing / 2.0) + rod_radius
-        # cylinder height includes both endcaps
+        struct_radius = max(cyl_radius, endcap_rad)
+        # cylinder height includes both endcaps (thickness contributes to height)
         cyl_height = rod_length + 2.0 * (endcap_offset + endcap_thick)
         half_height = cyl_height / 2.0
-        R_sphere = 20.0 * rod_radius
 
-        lhs = half_height * half_height + cyl_radius * cyl_radius
-        rhs = R_sphere * R_sphere
-        if rhs <= 0:
-            return p, False
-        if lhs <= rhs:
+        # minimal sphere radius required to contain the cylinder
+        R_min = math.sqrt(half_height * half_height + struct_radius * struct_radius)
+        # apply a small safety factor, but clamp to reasonable multiples of rod_radius
+        min_allowed = MIN_SPHERE_MULT * rod_radius
+        max_allowed = MAX_SPHERE_MULT * rod_radius
+        R_sphere = max(min_allowed, min(R_min * SPHERE_SAFETY_FACTOR, max_allowed))
+
+        # if already fits, no adjustment
+        current = math.sqrt(half_height * half_height + struct_radius * struct_radius)
+        if current <= R_sphere:
             return p, False
 
-        # scale <= 1 to shrink spacing/length/offset so cylinder fits inside sphere
-        current = math.sqrt(lhs)
-        desired = R_sphere
-        scale = min(1.0, desired / current)
+        # scale <= 1 to shrink spacing/length/offset so cylinder fits inside sphere of radius R_sphere
+        scale = min(1.0, R_sphere / current)
 
         new_spacing = rod_spacing * scale
         new_length = rod_length * scale
@@ -132,7 +147,7 @@ def run_trial(params, model, writer, f, enforce=True):
     if enforce:
         params, adjusted = enforce_inscribed_constraint(params, model)
         if adjusted:
-            print("Parameters adjusted to fit inside sphere (20*rod_radius):", params)
+            print("Parameters adjusted to fit inside clamped sphere bounds:", params)
 
     # unpack params
     V_rf, V_dc, V_endcap, rod_spacing, rod_radius, rod_length, endcap_offset = params
@@ -142,6 +157,8 @@ def run_trial(params, model, writer, f, enforce=True):
     depth_eV = None
     offset_mm = None
     P_est_mW = None
+    endcap_thick = None
+    endcap_rad = None
     try:
         model.parameter("V_rf", V_rf)
         model.parameter("V_dc", V_dc)
@@ -157,6 +174,15 @@ def run_trial(params, model, writer, f, enforce=True):
         depth_eV = try_eval(model, "depth_eV")
         offset_mm = try_eval(model, "offset_mm")
         P_est_mW = try_eval(model, "P_est_mW")
+        # capture endcap properties if available
+        try:
+            endcap_thick = try_eval(model, "endcap_thick")
+        except Exception:
+            endcap_thick = None
+        try:
+            endcap_rad = try_eval(model, "endcap_rad")
+        except Exception:
+            endcap_rad = None
         print("depth_eV:", depth_eV, "offset_mm:", offset_mm, "P_est_mW:", P_est_mW)
 
         score = objective(depth_eV, offset_mm, P_est_mW)
@@ -169,12 +195,13 @@ def run_trial(params, model, writer, f, enforce=True):
     try:
         # write a row using the provided DictWriter and flush the underlying file
         writer.writerow({
-                "V_rf": V_rf, "V_dc": V_dc, "V_endcap": V_endcap,
-                "rod_spacing": rod_spacing, "rod_radius": rod_radius,
-                "rod_length": rod_length, "endcap_offset": endcap_offset,
-                "depth_eV": depth_eV, "offset_mm": offset_mm,
-                "P_est_mW": P_est_mW, "score": score
-            })
+            "V_rf": V_rf, "V_dc": V_dc, "V_endcap": V_endcap,
+            "rod_spacing": rod_spacing, "rod_radius": rod_radius,
+            "rod_length": rod_length, "endcap_offset": endcap_offset,
+            "endcap_thick": endcap_thick, "endcap_rad": endcap_rad,
+            "depth_eV": depth_eV, "offset_mm": offset_mm,
+            "P_est_mW": P_est_mW, "score": score
+        })
         f.flush()
         os.fsync(f.fileno())
 
@@ -213,7 +240,7 @@ def main():
 
         with open("optimization_log.csv", "w", newline="") as f:
             fieldnames = ["V_rf","V_dc","V_endcap","rod_spacing","rod_radius",
-                                "rod_length","endcap_offset","depth_eV","offset_mm","P_est_mW","score"]
+                                "rod_length","endcap_offset","endcap_thick","endcap_rad","depth_eV","offset_mm","P_est_mW","score"]
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
 

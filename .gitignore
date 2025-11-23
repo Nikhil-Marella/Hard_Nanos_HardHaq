@@ -34,3 +34,7 @@ HardHaq_Submission.*
 
 *.mph
 *.mph.lock
+
+# Ignore OCR/rasterization output pages
+formula_page*
+formula.log
